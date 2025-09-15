@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  epg-proxy:
+    build: .
+    container_name: epg-proxy
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - REFRESH_HOURS=12
+    volumes:
+      - ./config.json:/app/config.json
