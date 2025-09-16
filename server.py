@@ -21,10 +21,18 @@ def process_feed(name, url):
         r.raise_for_status()
         xml = etree.fromstring(r.content)
 
+        # Step 1: build channel_id → icon_url map
+        channel_icons = {}
         for chan in xml.findall("channel"):
             icon = chan.find("icon")
             if icon is not None and "src" in icon.attrib:
-                chan.attrib["tvc-guide-art"] = icon.attrib["src"]
+                channel_icons[chan.attrib["id"]] = icon.attrib["src"]
+
+        # Step 2: apply icons to each programme
+        for prog in xml.findall("programme"):
+            chan_id = prog.attrib.get("channel")
+            if chan_id in channel_icons:
+                prog.attrib["tvc-guide-art"] = channel_icons[chan_id]
 
         slug = slugify(name)
         CACHE[slug] = {
@@ -32,7 +40,7 @@ def process_feed(name, url):
             "xml": etree.tostring(xml, encoding="utf-8", xml_declaration=True),
             "last_updated": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
         }
-        print(f"[INFO] Updated feed {name}")
+        print(f"[INFO] Updated feed {name} with {len(channel_icons)} channel icons")
     except Exception as e:
         print(f"[ERROR] Updating {name}: {e}")
 
