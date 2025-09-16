@@ -28,11 +28,18 @@ def process_feed(name, url):
             if icon is not None and "src" in icon.attrib:
                 channel_icons[chan.attrib["id"]] = icon.attrib["src"]
 
-        # Step 2: apply icons to each programme
+        # Step 2: add <icon> element to each programme
         for prog in xml.findall("programme"):
             chan_id = prog.attrib.get("channel")
             if chan_id in channel_icons:
-                prog.attrib["tvc-guide-art"] = channel_icons[chan_id]
+                # Only add if programme doesn't already have an <icon>
+                if prog.find("icon") is None:
+                    icon_el = etree.Element("icon")
+                    icon_el.set("src", channel_icons[chan_id])
+                    prog.insert(1, icon_el)  # insert after <title>, before <desc> ideally
+                else:
+                    # overwrite existing icon src if you prefer updating
+                    prog.find("icon").set("src", channel_icons[chan_id])
 
         slug = slugify(name)
         CACHE[slug] = {
